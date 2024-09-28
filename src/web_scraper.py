@@ -5,25 +5,18 @@ import pandas as pd
 import numpy as np
 import time
 from requests.exceptions import RequestException
+import re
 
 class CostOfLivingScraper:
 
     def __init__(self) -> None:
-        # Initialize data as a list of dictionaries (rows)
         self.data = []
         self.missing_data = []
-
-        # Initialize master_columns for handling columns
         self.master_columns = []
-
-        # Initialize global column mapping
         self.column_mapping = {}
-
-        # Ensure the 'data' directory exists
         self.data_dir = os.path.join(os.getcwd(), 'data')
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
-
         # Print initialization message
         print("Initialized CostOfLivingScraper.")
 
@@ -74,11 +67,24 @@ class CostOfLivingScraper:
                     "Country": country_name,
                     "City": city_name
                 }
+
                 # Initialize columns_in_order with predefined columns
                 columns_in_order = ["Country", "City"]
 
                 # Initialize column_name_counts for this country/city
                 column_name_counts = {}
+
+                # Extract the number of entries using updated regex
+                entries_text = soup.get_text()
+                # Updated regex to capture both country and city entries
+                entries_match = re.search(r'This\s+(country|city)\s+had\s+(\d+)\s+entries', entries_text, re.IGNORECASE)
+                if entries_match:
+                    entries_count = int(entries_match.group(2))
+                else:
+                    entries_count = np.nan  # Assign NaN if not found
+
+                record["Entries"] = entries_count  # Add Entries to the record
+                columns_in_order.append("Entries")   # Add Entries to columns_in_order
 
                 for row in table.find_all("tr"):
                     columns = row.find_all("td")
